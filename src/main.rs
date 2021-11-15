@@ -11,7 +11,8 @@ use std::{
 use structopt::StructOpt;
 use strum_macros::EnumString;
 use tokio::{self, sync::Semaphore};
-use tracing::info;
+use tracing::{error, info};
+use tracing_appender;
 use tracing_subscriber;
 
 mod http_structs;
@@ -160,9 +161,10 @@ async fn pin_estuary(estuary_key: String, http_client: reqwest::Client, cid: Str
         .await?
         .is_some()
     {
+        info!("Already pinned: {}", cid);
         return Ok(());
     }
-    let estuary_response: EstuaryUpload = http_client
+    let _estuary_response: EstuaryUpload = http_client
         .post(Url::parse(&ESTUARY)?.join("pinning/pins")?)
         .header(AUTHORIZATION, &format!("Bearer {}", estuary_key))
         .json(&json!({ "cid": cid }))
@@ -170,6 +172,7 @@ async fn pin_estuary(estuary_key: String, http_client: reqwest::Client, cid: Str
         .await?
         .json()
         .await?;
+    info!("Pinned: {}", cid);
     Ok(())
 }
 
@@ -336,7 +339,7 @@ async fn token_metadata(opt: Opt) -> Result<()> {
     }
     for (token_key, handle) in handles.iter_mut() {
         match handle.await? {
-            Err(e) => println!("Token n.{}: {}", token_key, e),
+            Err(e) => error!("Token n.{}: {}", token_key, e),
             Ok(_) => (),
         };
     }
@@ -348,6 +351,8 @@ async fn token_metadata(opt: Opt) -> Result<()> {
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {
     let opt = Opt::from_args();
-    tracing_subscriber::fmt::init();
+    let file_appender = tracing_appender::rolling::daily(".", "henflow.log");
+    let (non_blocking, _guard) = tracing_appender::non_blocking(file_appender);
+    tracing_subscriber::fmt().with_writer(non_blocking).init();
     token_metadata(opt).await.unwrap();
 }
