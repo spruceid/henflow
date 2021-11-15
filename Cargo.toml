@@ -1,0 +1,21 @@
+[package]
+name = "henflow"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1.13", features = ["full"]}
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+# ipfs-api-backend-hyper = "0.2"
+hex = "0.4"
+indicatif = "0.16"
+structopt = "0.3"
+strum = "0.22"
+strum_macros = "0.22"
+tracing = "0.1"
+tracing-subscriber = "0.2"
